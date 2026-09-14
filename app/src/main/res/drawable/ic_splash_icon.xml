@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- "V" estilizada de VERTIL con núcleo luminoso -->
+    <path android:fillColor="#00E5FF"
+        android:pathData="M28,32 L54,80 L80,32 L70,32 L54,62 L38,32 Z" />
+    <path android:fillColor="#7C4DFF"
+        android:pathData="M44,42 L54,60 L48,60 L40,42 Z" />
+    <path android:fillColor="#7C4DFF"
+        android:pathData="M60,42 L68,60 L62,60 L54,42 Z" />
+</vector>

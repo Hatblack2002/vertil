@@ -1,0 +1,109 @@
+<resources>
+    <string name="app_name">VERTIL</string>
+    <string name="app_tagline">Entorno local inteligente</string>
+    <string name="app_version">v1.0.0</string>
+    <string name="developer">Vertil Jivenson</string>
+
+    <!-- Nav -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_models">Modelos</string>
+    <string name="nav_files">Archivos</string>
+    <string name="nav_activity">Actividad</string>
+    <string name="nav_automations">Automatizaciones</string>
+    <string name="nav_permissions">Permisos</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Identity -->
+    <string name="identity_greeting">Hola, soy VERTIL, desarrollada por Vertil Jivenson. ¿En qué puedo ayudarte hoy?</string>
+    <string name="identity_short">VERTIL · Local</string>
+
+    <!-- Home -->
+    <string name="home_model_ready">Listo</string>
+    <string name="home_model_no_model">Sin modelo</string>
+    <string name="home_ram">RAM</string>
+    <string name="home_tasks">Tareas</string>
+    <string name="home_permissions">Permisos</string>
+    <string name="home_talk">Hablar con VERTIL</string>
+
+    <!-- Chat -->
+    <string name="chat_placeholder">Escribe a VERTIL…</string>
+    <string name="chat_state_local">LOCAL</string>
+    <string name="chat_state_loading">Cargando…</string>
+    <string name="chat_state_generating">Generando…</string>
+    <string name="chat_no_model_title">Sin modelo cargado</string>
+    <string name="chat_no_model_msg">Importa o activa un modelo local desde la pestaña Modelos.</string>
+
+    <!-- Models -->
+    <string name="models_title">Modelos locales</string>
+    <string name="models_import">Importar modelo</string>
+    <string name="models_install">Instalar</string>
+    <string name="models_load">Cargar</string>
+    <string name="models_unload">Descargar</string>
+    <string name="models_delete">Eliminar</string>
+    <string name="models_active">Activo</string>
+    <string name="models_installed">Instalado</string>
+    <string name="models_compatible">Compatible</string>
+    <string name="models_no_models">No hay modelos importados</string>
+    <string name="models_no_models_msg">Importa un modelo ONNX para activar la inferencia local.</string>
+    <string name="models_check_hash">Verificar integridad</string>
+
+    <!-- Files -->
+    <string name="files_title">Archivos</string>
+    <string name="files_search">Buscar archivos…</string>
+    <string name="files_pick_folder">Seleccionar carpeta</string>
+
+    <!-- Activity -->
+    <string name="activity_title">Registro de actividad</string>
+    <string name="activity_empty">Sin actividad registrada</string>
+    <string name="activity_undo">Deshacer</string>
+
+    <!-- Automations -->
+    <string name="auto_title">Automatizaciones</string>
+    <string name="auto_new">Nueva regla</string>
+    <string name="auto_empty">Sin reglas</string>
+    <string name="auto_empty_msg">Crea reglas para que VERTIL organice archivos automáticamente.</string>
+
+    <!-- Permissions -->
+    <string name="perm_title">Permisos</string>
+    <string name="perm_level_0">Nivel 0 · Lectura</string>
+    <string name="perm_level_1">Nivel 1 · Organización</string>
+    <string name="perm_level_2">Nivel 2 · Modificación</string>
+    <string name="perm_level_3">Nivel 3 · Automatización</string>
+    <string name="perm_level_4">Nivel 4 · Acción sensible</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_advanced">Modo avanzado</string>
+    <string name="settings_advanced_runtime">Runtime</string>
+    <string name="settings_advanced_format">Formato</string>
+    <string name="settings_advanced_quant">Cuantización</string>
+    <string name="settings_advanced_context">Contexto</string>
+    <string name="settings_advanced_threads">Hilos</string>
+    <string name="settings_advanced_ram">RAM</string>
+
+    <!-- Common -->
+    <string name="action_run">Ejecutar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_confirm">Confirmar</string>
+    <string name="action_deny">Denegar</string>
+    <string name="action_close">Cerrar</string>
+    <string name="action_refresh">Actualizar</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="action_open_settings">Abrir ajustes</string>
+    <string name="state_ready">Listo</string>
+    <string name="state_loading">Cargando…</string>
+    <string name="state_error">Error</string>
+
+    <!-- Empty states -->
+    <string name="empty_no_permission_title">Permiso requerido</string>
+    <string name="empty_no_permission_msg">VERTIL necesita acceso a tu almacenamiento para gestionar archivos.</string>
+
+    <!-- Errors -->
+    <string name="err_oom">Memoria insuficiente para cargar el modelo. Libera RAM o usa un modelo más pequeño.</string>
+    <string name="err_load_failed">No se pudo cargar el modelo: %1$s</string>
+    <string name="err_inference_failed">Inferencia fallida: %1$s</string>
+    <string name="err_perm_denied">Permiso denegado: %1$s</string>
+    <string name="err_unknown">Error desconocido: %1$s</string>
+</resources>

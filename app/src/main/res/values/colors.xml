@@ -1,0 +1,22 @@
+<resources>
+    <!--
+        VERTIL — paleta principal.
+        Identidad: oscuro premium cian/violeta (transmite tecnología + inteligencia local).
+    -->
+    <color name="v_bg">#050912</color>
+    <color name="v_bg_gradient_top">#0A1428</color>
+    <color name="v_surface">#0E1A2E</color>
+    <color name="v_surface_variant">#152A48</color>
+    <color name="v_primary">#00E5FF</color>
+    <color name="v_primary_variant">#18FFFF</color>
+    <color name="v_secondary">#7C4DFF</color>
+    <color name="v_accent">#FFC107</color>
+    <color name="v_on_bg">#E8F1FA</color>
+    <color name="v_on_surface">#B8C9DC</color>
+    <color name="v_on_surface_muted">#6A7B8F</color>
+    <color name="v_outline">#1F3A5C</color>
+    <color name="v_error">#FF5252</color>
+    <color name="v_success">#69F0AE</color>
+    <color name="v_warning">#FFD740</color>
+    <color name="v_splash_bg">#050912</color>
+</resources>
