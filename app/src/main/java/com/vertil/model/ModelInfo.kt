@@ -4,11 +4,23 @@ import kotlinx.serialization.Serializable
 
 /**
  * Estado posible de un modelo local.
+ *
+ * Correspondencia con la especificación §10:
+ *  - IMPORTING / VALIDATING: estados en memoria durante el pipeline de importación;
+ *    un archivo parcial NUNCA se registra en Room.
+ *  - IMPORTED + VALID (contenido verificado) ≡ INSTALLED: el registro en Room
+ *    solo ocurre cuando la copia y la validación han terminado con éxito.
+ *  - INVALID: "operación fallida + sin registro en Room" (no hay fila que marcar).
+ *  - LOADING / READY / GENERATING / ERROR / UNLOADING: ciclo de vida del runtime.
  */
 @Serializable
 enum class ModelState {
-    /** Importado pero no cargado en memoria. */
+    /** En proceso de importación (solo en memoria/UI). */
+    IMPORTING,
+    /** Importado y validado en disco, aún no cargado en memoria. */
     INSTALLED,
+    /** En proceso de validación profunda (solo en memoria/UI). */
+    VALIDATING,
     /** En proceso de carga. */
     LOADING,
     /** Cargado en memoria y listo para inferencia. */

@@ -51,12 +51,10 @@ fun ModelsScreen(vm: VertilViewModel, contentPadding: PaddingValues = PaddingVal
     val ctx = LocalContext.current
 
     val picker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            ctx.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            val name = uri.lastPathSegment?.substringAfterLast('/') ?: "modelo"
-            vm.importModel(ctx, uri, name)
+        com.vertil.ui.DocumentPickContract.OpenMultipleDocuments()
+    ) { picked: com.vertil.ui.DocumentPickContract.OpenMultipleDocuments.Picked? ->
+        if (picked != null && picked.uris.isNotEmpty()) {
+            vm.importModel(ctx, picked.uris, picked.flags, null)
         }
     }
 
@@ -73,14 +71,19 @@ fun ModelsScreen(vm: VertilViewModel, contentPadding: PaddingValues = PaddingVal
                 Text("${models.size} modelos · runtime ONNX", color = VPrimary, style = MaterialTheme.typography.labelMedium)
             }
             Button(
-                onClick = { picker.launch(arrayOf("application/octet-stream", "*/*")) },
+                onClick = { picker.launch(arrayOf("application/octet-stream", "application/json", "*/*")) },
                 colors = ButtonDefaults.buttonColors(containerColor = VPrimary, contentColor = Color.Black)
-            ) { Text("Importar") }
+            ) { Text("Importar paquete") }
         }
 
         if (models.isEmpty()) {
-            EmptyBox(title = "No hay modelos importados",
-                msg = "Importa un archivo .onnx para activar la inferencia local.\n\nNota: los modelos GGUF y TFLite están documentados como pendientes v1.1.")
+            EmptyBox(
+                title = "No hay modelos importados",
+                msg = "Selecciona el .onnx del modelo JUNTO a sus archivos auxiliares " +
+                    "(tokenizer.json, tokenizer_config.json, config.json, generation_config.json) " +
+                    "y se importarán como un paquete.\n\n" +
+                    "Si ya importaste el .onnx, actívalo y luego importa solo los auxiliares."
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -138,6 +141,8 @@ private fun ModelCard(model: ModelInfo, vm: VertilViewModel, isActive: Boolean) 
 }
 
 private fun stateLabel(s: ModelState): String = when (s) {
+    ModelState.IMPORTING -> "Importando…"
+    ModelState.VALIDATING -> "Validando…"
     ModelState.INSTALLED -> "Instalado"
     ModelState.LOADING -> "Cargando…"
     ModelState.READY -> "Listo"

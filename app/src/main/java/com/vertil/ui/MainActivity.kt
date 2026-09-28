@@ -90,21 +90,20 @@ private fun RootScreen(vm: VertilViewModel = viewModel()) {
     val snackbarHost = remember { SnackbarHostState() }
     val ctx = LocalContext.current
 
-    // Permiso inicial de almacenamiento
+    // Permisos mínimos (especificación §12): SAF (ACTION_OPEN_DOCUMENT) NO
+    // necesita READ_MEDIA_* ni READ_EXTERNAL_STORAGE. Solo se solicita
+    // POST_NOTIFICATIONS (notificaciones de monitoreo en Android 13+).
     val permLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { /* resultado: la app degrada gracefully si no se concede */ }
 
     LaunchedEffect(Unit) {
-        val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val perm = Manifest.permission.POST_NOTIFICATIONS
+            if (ContextCompat.checkSelfPermission(ctx, perm) != PackageManager.PERMISSION_GRANTED) {
+                permLauncher.launch(arrayOf(perm))
+            }
         }
-        val needed = perms.filter {
-            ContextCompat.checkSelfPermission(ctx, it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (needed.isNotEmpty()) permLauncher.launch(needed.toTypedArray())
     }
 
     LaunchedEffect(vm.snackbar) {

@@ -64,6 +64,9 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
+            // El test de aceptación carga el grafo ONNX real (q4f16 ≈ 117 MB)
+            // en la JVM de test: necesita heap holgado.
+            all { it.maxHeapSize = "3g" }
         }
     }
 }
@@ -119,6 +122,10 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("androidx.test.ext:junit:1.2.1")
+    // ONNX Runtime JVM (nativos linux-x86_64): permite ejecutar los tests de
+    // aceptación 4-12 con el grafo REAL en la JVM de CI/sandbox. En dispositivo
+    // se usa el AAR de arriba; las clases son las mismas (ai.onnxruntime.*).
+    testImplementation("com.microsoft.onnxruntime:onnxruntime:1.18.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")

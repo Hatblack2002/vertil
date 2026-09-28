@@ -18,8 +18,10 @@ import com.vertil.core.log.VertilLog
 import com.vertil.device.CompatibilityAssessor
 import com.vertil.di.ServiceLocator
 import com.vertil.model.ModelInfo
+import com.vertil.model.ModelManager
 import com.vertil.model.ModelState
 import com.vertil.permissions.PermissionRequest
+import com.vertil.model.runtime.engine.ChatTurn
 import com.vertil.tools.ToolInput
 import com.vertil.tools.ToolResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -159,21 +161,54 @@ class VertilViewModel : ViewModel() {
 
         viewModelScope.launch {
             val systemPrompt = core.buildSystemPrompt()
-            val result = core.modelManager.generate(text, systemPrompt)
+
+            // Historial REAL de conversación (user/assistant), excluyendo el
+            // saludo sembrado y mensajes de error.
+            val history = _chat.value.messages
+                .filter { !it.isError && it.content != VertilIdentity.GREETING }
+                .dropLast(1) // el mensaje que acabamos de añadir
+                .map { ChatTurn(
+                    role = if (it.isUser) "user" else "assistant",
+                    content = it.content
+                ) }
+
+            // Mensaje asistente en curso (streaming token → UI, §15).
+            val placeholder = ChatMessage(
+                timestamp = System.currentTimeMillis(),
+                role = ChatRole.ASSISTANT,
+                content = ""
+            )
+            _chat.value = _chat.value.copy(messages = _chat.value.messages + placeholder)
+
+            core.modelManager.setStreamListener { cumulative ->
+                if (cumulative.isNotEmpty()) {
+                    _chat.value = _chat.value.copy(
+                        messages = _chat.value.messages.dropLast(1) + placeholder.copy(
+                            content = cumulative
+                        )
+                    )
+                }
+            }
+
+            val result = try {
+                core.modelManager.generate(text, systemPrompt, history)
+            } finally {
+                core.modelManager.setStreamListener(null)
+            }
             when (result) {
                 is VertilResult.Success -> {
                     val gen = result.value
                     val assistantMsg = ChatMessage(
                         timestamp = System.currentTimeMillis(),
                         role = ChatRole.ASSISTANT,
-                        content = gen.text,
+                        content = gen.text.ifBlank { "(respuesta vacía)" },
                         tokensGenerated = gen.tokensGenerated,
                         durationMs = gen.durationMs,
                         tokensPerSecond = gen.tokensPerSecond,
                         modelId = core.modelManager.activeRuntime.value.info?.id
                     )
                     _chat.value = _chat.value.copy(
-                        messages = _chat.value.messages + assistantMsg,
+                        messages = _chat.value.messages.dropLast(1) + assistantMsg,
                         isGenerating = false
                     )
                 }
@@ -185,7 +220,7 @@ class VertilViewModel : ViewModel() {
                         isError = true
                     )
                     _chat.value = _chat.value.copy(
-                        messages = _chat.value.messages + errorMsg,
+                        messages = _chat.value.messages.dropLast(1) + errorMsg,
                         isGenerating = false,
                         error = result.message
                     )
@@ -205,25 +240,65 @@ class VertilViewModel : ViewModel() {
 
     // === Models ===
 
-    fun importModel(context: Context, uri: android.net.Uri, name: String?) {
+    /**
+     * Importación MULTI-ARCHIVO (especificación §4): el usuario selecciona el
+     * .onnx junto a sus recursos (tokenizer.json, configs…). Copia STREAMING
+     * con SHA-256 en vuelo, validación firma + ORT y registro Room solo al
+     * final. Sin copias .bin intermedias en cache.
+     */
+    fun importModel(context: Context, uris: List<android.net.Uri>, flags: Int, name: String?) {
+        if (uris.isEmpty()) return
         viewModelScope.launch {
-            // Copiar URI a archivo temporal, luego importar
-            val tmp = java.io.File(context.cacheDir, "import_${System.currentTimeMillis()}.bin")
-            try {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    tmp.outputStream().use { out -> input.copyTo(out) }
-                } ?: run {
-                    showSnack("No se pudo abrir el archivo"); return@launch
+            val resolver = com.vertil.model.importer.ContentResolverDocumentMetadataResolver(context)
+            val entries = ArrayList<ModelManager.PackageEntryInput>()
+            var failed: String? = null
+            for (uri in uris) {
+                // Persistencia protegida (no fatal — §5.4)
+                com.vertil.model.importer.UriPermissions.tryTakePersistable(context, uri, flags)
+                when (val meta = resolver.resolve(uri)) {
+                    is VertilResult.Success -> {
+                        val displayName = meta.value.displayName
+                        if (displayName.isNullOrBlank()) {
+                            failed = "El proveedor no entregó el nombre real de un archivo."; break
+                        }
+                        val u = uri
+                        entries.add(ModelManager.PackageEntryInput(
+                            displayName = displayName,
+                            expectedSize = meta.value.sizeBytes,
+                            openStream = {
+                                context.contentResolver.openInputStream(u)
+                                    ?: throw java.io.IOException("No se pudo abrir $displayName")
+                            }
+                        ))
+                    }
+                    is VertilResult.Failure -> { failed = meta.message; break }
                 }
-                val result = core.modelManager.importFromFile(tmp.absolutePath, name)
-                when (result) {
-                    is VertilResult.Success -> showSnack("Modelo importado: ${result.value.name}")
-                    is VertilResult.Failure -> showSnack("Error: ${result.message}")
-                }
-            } catch (t: Throwable) {
-                showSnack("Error: ${t.message}")
-            } finally {
-                tmp.delete()
+            }
+            if (failed != null) { showSnack("Error: $failed"); return@launch }
+
+            // Rutas de importación:
+            //  - con .onnx → paquete completo (multi-archivo);
+            //  - solo auxiliares → attach al modelo ONNX activo;
+            //  - mezcla inválida → importPackage devuelve el error técnico claro.
+            val hasOnnx = entries.any {
+                com.vertil.model.ModelFormat.fromExtension(it.displayName) ==
+                    com.vertil.model.ModelFormat.ONNX
+            }
+            val onlyAux = entries.all {
+                com.vertil.model.ModelFormat.fromExtension(it.displayName) ==
+                    com.vertil.model.ModelFormat.UNKNOWN &&
+                    com.vertil.model.packaging.ModelPackageLoader.isAuxFileName(it.displayName)
+            }
+            val result = when {
+                hasOnnx -> core.modelManager.importPackage(entries, name)
+                onlyAux -> core.modelManager.attachAuxToActiveModel(entries)
+                else -> core.modelManager.importPackage(entries, name)
+            }
+            when (result) {
+                is VertilResult.Success -> showSnack(
+                    "Paquete importado: ${result.value.name} (${result.value.sizeHuman})"
+                )
+                is VertilResult.Failure -> showSnack("Error: ${result.message}")
             }
         }
     }

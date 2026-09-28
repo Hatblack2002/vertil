@@ -53,8 +53,13 @@ fun FilesScreen(vm: VertilViewModel, contentPadding: PaddingValues = PaddingValu
         ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
         if (uri != null) {
-            ctx.contentResolver.takePersistableUriPermission(uri,
-                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            // Persistencia protegida (especificación §5): SecurityException del
+            // proveedor NO debe cerrar la app; la sesión actual sigue funcionando.
+            com.vertil.model.importer.UriPermissions.tryTakePersistable(
+                ctx, uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
             currentPath = uri.toString()
         }
     }

@@ -1,9 +1,15 @@
 package com.vertil.model
 
 import com.vertil.core.VertilResult
+import com.vertil.model.runtime.engine.ChatTurn
 
 /**
  * Parámetros de generación.
+ *
+ * [history] lleva los turnos previos user/assistant (sin el mensaje actual ni
+ * el system): los runtimes conversacionales lo integran vía chat template.
+ * [maxNewTokens] permite a la UI limitar la respuesta (null = default del
+ * runtime, derivado de generation_config.json).
  */
 data class GenerationParams(
     val prompt: String,
@@ -11,7 +17,9 @@ data class GenerationParams(
     val maxTokens: Int = 512,
     val temperature: Float = 0.7f,
     val topP: Float = 0.9f,
-    val stopSequences: List<String> = emptyList()
+    val stopSequences: List<String> = emptyList(),
+    val history: List<ChatTurn> = emptyList(),
+    val maxNewTokens: Int? = null
 )
 
 /**
@@ -66,4 +74,11 @@ interface LocalModel {
 
     /** Información en tiempo de ejecución para la sección avanzada. */
     fun getRuntimeInfo(): Map<String, String>
+
+    /**
+     * Listener opcional de streaming (token → UI sin esperar al final — §15).
+     * Recibe el texto ACUMULADO decodificado. Default no-op para runtimes sin
+     * streaming; los que lo soportan lo sobrescriben.
+     */
+    fun setStreamListener(listener: ((String) -> Unit)?) { /* no-op por defecto */ }
 }
