@@ -14,7 +14,11 @@ import com.vertil.model.runtime.engine.ChatTurn
 data class GenerationParams(
     val prompt: String,
     val systemPrompt: String = "",
-    val maxTokens: Int = 512,
+    // TEMPORAL durante depuración de OOM en dispositivo (antes 512): límite
+    // corto para la prueba física. NO es la solución del bug attention_mask
+    // (ese se corrigió en OnnxLmEngine.buildSequenceTensors). Restaurar a un
+    // valor mayor una vez validado el fix en dispositivo.
+    val maxTokens: Int = 64,
     val temperature: Float = 0.7f,
     val topP: Float = 0.9f,
     val stopSequences: List<String> = emptyList(),

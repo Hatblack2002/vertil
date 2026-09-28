@@ -249,11 +249,16 @@ class OnnxLmEngine(
     // ============================ TENSORES ============================
 
     /**
-     * Tensores de secuencia para un paso: tokens [1,S], máscara [1,S]
-     * (unos) y posiciones [1,S] (pastLen..pastLen+S-1). Solo incluye las
-     * entradas que el plan declara.
+     * Tensores de secuencia para un paso:
+     *  - input_ids:    [1, S]
+     *  - attention_mask: [1, pastLen + S] con todos los valores 1 — contrato de
+     *    los decoders causales exportados con past_key_values (HF/ORT): la
+     *    máscara representa la secuencia TOTAL atendida (cache + paso actual),
+     *    no solo el fragmento alimentado. Batch=1 sin padding ⇒ todos unos.
+     *  - position_ids: [1, S] (pastLen..pastLen+S-1).
+     * Solo incluye las entradas que el plan declara.
      */
-    private fun buildSequenceTensors(ids: List<Int>, pastLen: Int): Map<String, OnnxTensor> {
+    internal fun buildSequenceTensors(ids: List<Int>, pastLen: Int): Map<String, OnnxTensor> {
         val s = ids.size
         val shape = longArrayOf(1, s.toLong())
         val out = LinkedHashMap<String, OnnxTensor>(4)
@@ -262,8 +267,10 @@ class OnnxLmEngine(
             env, java.nio.LongBuffer.wrap(ids.map { it.toLong() }.toLongArray()), shape
         )
         plan.attentionMaskInput?.let { name ->
+            val totalLen = pastLen + s
+            val maskShape = longArrayOf(1, totalLen.toLong())
             out[name] = OnnxTensor.createTensor(
-                env, java.nio.LongBuffer.wrap(LongArray(s) { 1L }), shape
+                env, java.nio.LongBuffer.wrap(LongArray(totalLen) { 1L }), maskShape
             )
         }
         plan.positionIdsInput?.let { name ->
